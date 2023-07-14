@@ -21,6 +21,7 @@
 #include "common/config.h"
 #include "common/macros.h"
 
+
 namespace bustub {
 
 /**
@@ -140,6 +141,8 @@ class LRUKReplacer {
   [[maybe_unused]] size_t replacer_size_;
   [[maybe_unused]] size_t k_;
   std::mutex latch_;
+  std::unordered_map<frame_id_t, std::vector<std::time_t>> access_history_;
+  std::unordered_map<frame_id_t, bool> is_evicted_;
 };
 
 }  // namespace bustub
