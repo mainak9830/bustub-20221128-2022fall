@@ -74,6 +74,11 @@ class BPlusTree {
   // read data from file and remove one by one
   void RemoveFromFile(const std::string &file_name, Transaction *transaction = nullptr);
 
+  //custom added
+  auto FindChildPageId(const KeyType &key, Page* node_page) -> page_id_t;
+  auto InsertInLeaf(const KeyType &key, const ValueType &value, BPlusTreeLeafPage<KeyType, ValueType, KeyComparator>* leaf_node) -> bool; 
+  auto InsertInParent(BPlusTreePage* node, const KeyType &key, BPlusTreePage* node_extra) -> bool;
+
  private:
   void UpdateRootPageId(int insert_record = 0);
 
@@ -82,6 +87,7 @@ class BPlusTree {
 
   void ToString(BPlusTreePage *page, BufferPoolManager *bpm) const;
 
+  
   // member variable
   std::string index_name_;
   page_id_t root_page_id_;
