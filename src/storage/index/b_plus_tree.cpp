@@ -11,7 +11,7 @@
 #include "storage/page/b_plus_tree_page.h"
 #include "storage/page/header_page.h"
 #include "storage/page/page.h"
-
+#include "iostream"
 namespace bustub {
 INDEX_TEMPLATE_ARGUMENTS
 BPLUSTREE_TYPE::BPlusTree(std::string name, BufferPoolManager *buffer_pool_manager, const KeyComparator &comparator,
@@ -69,9 +69,30 @@ auto BPLUSTREE_TYPE::GetValue(const KeyType &key, std::vector<ValueType> *result
  * @return: since we only support unique key, if user try to insert duplicate
  * keys return false, otherwise return true.
  */
+
+INDEX_TEMPLATE_ARGUMENTS
+auto BPLUSTREE_TYPE::FindLeaf(const KeyType &key)-> Page *{
+
+  auto node_page_id = root_page_id_;
+  
+  Page* node_page;
+  while(true){
+    node_page = buffer_pool_manager_->FetchPage(node_page_id);
+    auto node = reinterpret_cast<BPlusTreePage *>(node_page->GetData());
+    
+    std::cout << "Traversing node " << " " << node_page->GetPageId() << " " << node->GetPageId() << " " << node->IsLeafPage() << std::endl;
+
+    if(node->IsLeafPage()){
+      return node_page;
+    }
+    
+    buffer_pool_manager_->UnpinPage(node_page_id, false);
+    node_page_id = (reinterpret_cast<InternalPage *>(node))->Lookup(key, comparator_);
+  }
+}
 INDEX_TEMPLATE_ARGUMENTS
 auto BPLUSTREE_TYPE::FindChildPageId(const KeyType &key, Page* node_page) -> page_id_t {
-  auto internal_node = reinterpret_cast<BPlusTreeInternalPage<KeyType, page_id_t, KeyComparator> *>(node_page->GetData());
+  auto internal_node = reinterpret_cast<InternalPage *>(node_page->GetData());
   int i;
   for(i = 1;i <= internal_node->GetSize();i++){
     if(comparator_(internal_node->KeyAt(i), key) != -1){
@@ -193,60 +214,46 @@ auto BPLUSTREE_TYPE::InsertInLeaf(const KeyType &key, const ValueType &value, BP
   leaf_node->SetKeyAt(i, key);
   leaf_node->SetValueAt(i, value);
 
+  leaf_node->IncreaseSize(1);
   
   return true;
 
 }
 
+
+
 INDEX_TEMPLATE_ARGUMENTS
 auto BPLUSTREE_TYPE::Insert(const KeyType &key, const ValueType &value, Transaction *transaction) -> bool {
-  if(root_page_id_ == INVALID_PAGE_ID){
+  // std::cout << "I am here for insert" << std::endl;
+  if(IsEmpty()){
     //create a new page
     Page* root = buffer_pool_manager_->NewPage(&root_page_id_);
     
     //create a new leaf page
     //apply root id, and reset
-    auto *root_leaf = new BPlusTreeLeafPage<KeyType, ValueType, KeyComparator>();
+    auto *root_leaf = reinterpret_cast<LeafPage *>(root->GetData());
 
     //Initialise the new leaf value
-    root_leaf->Init(root->GetPageId(), -1, leaf_max_size_);
-    //To DO :: 
-    //add the key and value for the leaf
-    
-
-    root_page_id_ = root->GetPageId();
-    
-    char *root_data [[maybe_unused]] = root->GetData();
-    root_data = reinterpret_cast<char *>(root_leaf);
+    root_leaf->Init(root->GetPageId(), INVALID_PAGE_ID, leaf_max_size_);
+    root_leaf->Insert(key, value, comparator_);
     buffer_pool_manager_->UnpinPage(root_page_id_, true);
+    UpdateRootPageId(1);
+    
+    return true;
   }
 
-  auto node_page_id = root_page_id_;
-  BPlusTreeLeafPage<KeyType, ValueType, KeyComparator>* leaf_target;
-  Page* node_page;
-  while(true){
-    node_page = buffer_pool_manager_->FetchPage(node_page_id);
-    auto node = reinterpret_cast<BPlusTreePage *>(node_page->GetData());
-    
+  
+ 
+  Page* leaf_page = FindLeaf(key);
+  auto leaf_target = reinterpret_cast<LeafPage *>(leaf_page->GetData());
 
-    if(node->IsLeafPage()){
-      leaf_target = reinterpret_cast<BPlusTreeLeafPage<KeyType, ValueType, KeyComparator> *>(node_page->GetData());
-      break;
-    }
-    buffer_pool_manager_->UnpinPage(node_page_id, false);
-    node_page_id = FindChildPageId(key, node_page);
+  if(!leaf_target->Insert(key, value, comparator_)){
+    buffer_pool_manager_->UnpinPage(leaf_page->GetPageId(), false);
+    return false;
   }
-
-  if(leaf_target->GetSize() < leaf_target->GetMaxSize()) {
-    //Add in leaf
-    if(!InsertInLeaf(key, value, leaf_target)){
-      return false;
-    }
-    //Unpin page
+  if(leaf_target->GetSize() <= leaf_target->GetMaxSize()) {
     
-    char *root_data [[maybe_unused]] = node_page->GetData();
-    root_data = reinterpret_cast<char *>(leaf_target);
-    buffer_pool_manager_->UnpinPage(node_page_id, true);
+    buffer_pool_manager_->UnpinPage(leaf_page->GetPageId(), true);
     return true;
   }
 

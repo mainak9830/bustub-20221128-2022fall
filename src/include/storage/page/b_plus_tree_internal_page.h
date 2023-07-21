@@ -44,11 +44,11 @@ class BPlusTreeInternalPage : public BPlusTreePage {
   auto ValueAt(int index) const -> ValueType;
   
   void SetValueAt(int index, const ValueType &value);
-
-  
+  //Custom methods
+  auto Lookup(const KeyType& key,  KeyComparator &comparator)->page_id_t;
  private:
   // Flexible array member for page data.
-  MappingType *array_;
+  MappingType array_[1];
   // std::vector<MappingType> array_;
 };
 }  // namespace bustub

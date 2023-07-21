@@ -9,6 +9,7 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include <algorithm>
 #include <csignal>
 #include <cstddef>
 #include <cstring>
@@ -37,10 +38,6 @@ void B_PLUS_TREE_INTERNAL_PAGE_TYPE::Init(page_id_t page_id, page_id_t parent_id
   SetMaxSize(max_size);
   SetPageType(IndexPageType::INTERNAL_PAGE);
   SetSize(0);
-  array_ = new MappingType[max_size+1];
-  // memcpy(array_, array_, sizeof(new_arr));
-  
-  
 }
 /*
  * Helper method to get/set the key associated with input "index"(a.k.a
@@ -64,6 +61,25 @@ void B_PLUS_TREE_INTERNAL_PAGE_TYPE::SetValueAt(int index, const ValueType &valu
   array_[index].second = value;
 }
 //Custom
+
+INDEX_TEMPLATE_ARGUMENTS
+auto B_PLUS_TREE_INTERNAL_PAGE_TYPE::Lookup(const KeyType& key,  KeyComparator &comparator)->page_id_t{
+  auto iter = std::lower_bound(array_+1, array_ + 1 + GetSize(), 
+  [comparator](const MappingType p, const KeyType key){
+  return comparator(p.first, key) < 0;
+  });
+
+  if(iter == array_+1+GetSize()){
+    return ValueAt(GetSize());
+  }
+
+  if(comparator(iter->first, key) == 0){
+    return iter->second;
+  }
+
+  return std::prev(iter)->second;
+
+}
 
 
 /*

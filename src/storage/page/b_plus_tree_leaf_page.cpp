@@ -9,11 +9,13 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include <algorithm>
 #include <sstream>
 
 #include "common/exception.h"
 #include "common/rid.h"
 #include "storage/page/b_plus_tree_leaf_page.h"
+#include "storage/page/b_plus_tree_page.h"
 
 namespace bustub {
 
@@ -33,7 +35,7 @@ void B_PLUS_TREE_LEAF_PAGE_TYPE::Init(page_id_t page_id, page_id_t parent_id, in
   SetMaxSize(max_size);
   SetPageType(IndexPageType::LEAF_PAGE);
   SetSize(0);
-  array_ = new MappingType[max_size+1];
+  SetNextPageId(next_page_id_);
 }
 
 /**
@@ -60,6 +62,13 @@ auto B_PLUS_TREE_LEAF_PAGE_TYPE::KeyAt(int index) const -> KeyType {
   return array_[index].first;
 }
 
+INDEX_TEMPLATE_ARGUMENTS
+auto B_PLUS_TREE_LEAF_PAGE_TYPE::ValueAt(int index) const -> ValueType {
+  // replace with your own code
+  // KeyType key{};
+  return array_[index].second;
+}
+
 //Custom Methods
 INDEX_TEMPLATE_ARGUMENTS
 void B_PLUS_TREE_LEAF_PAGE_TYPE::SetKeyAt(int index, const KeyType &key) {
@@ -74,11 +83,34 @@ void B_PLUS_TREE_LEAF_PAGE_TYPE::SetValueAt(int index, const ValueType &value) {
 }
 
 INDEX_TEMPLATE_ARGUMENTS
-auto B_PLUS_TREE_LEAF_PAGE_TYPE::ValueAt(int index) const -> ValueType {
-  // replace with your own code
-  // KeyType key{};
-  return array_[index].second;
+auto B_PLUS_TREE_LEAF_PAGE_TYPE::Insert(const KeyType &key, const ValueType &value, 
+KeyComparator &comparator) -> bool{
+  int index = FindKeyIndex(key, comparator);
+
+  if(index == GetSize()){
+    array_[index] = {key, value};
+    IncreaseSize(1);
+    return true;
+  }
+  if(comparator(array_[index].first, key) == 0){
+    return false;
+  }
+  std::move_backward(array_ + index, array_ + GetSize(), array_ + GetSize()+1);
+  array_[index] = {key, value};
+  IncreaseSize(1);
+  return true;
 }
+
+INDEX_TEMPLATE_ARGUMENTS
+auto B_PLUS_TREE_LEAF_PAGE_TYPE::FindKeyIndex(const KeyType &key, KeyComparator &comparator) -> int {
+auto iter = std::lower_bound(array_, array_ + GetSize(), key,
+[comparator](const MappingType p, const KeyType key){
+  return comparator(p.first, key) < 0;
+});
+  return iter-array_;
+}
+
+
 
 template class BPlusTreeLeafPage<GenericKey<4>, RID, GenericComparator<4>>;
 template class BPlusTreeLeafPage<GenericKey<8>, RID, GenericComparator<8>>;

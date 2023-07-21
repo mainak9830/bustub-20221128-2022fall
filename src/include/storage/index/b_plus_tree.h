@@ -14,6 +14,7 @@
 #include <string>
 #include <vector>
 
+#include "common/config.h"
 #include "concurrency/transaction.h"
 #include "storage/index/index_iterator.h"
 #include "storage/page/b_plus_tree_internal_page.h"
@@ -78,7 +79,9 @@ class BPlusTree {
   auto FindChildPageId(const KeyType &key, Page* node_page) -> page_id_t;
   auto InsertInLeaf(const KeyType &key, const ValueType &value, BPlusTreeLeafPage<KeyType, ValueType, KeyComparator>* leaf_node) -> bool; 
   auto InsertInParent(BPlusTreePage* node, const KeyType &key, BPlusTreePage* node_extra) -> bool;
-
+  auto FindLeaf(const KeyType &key)-> Page*;
+  
+  
  private:
   void UpdateRootPageId(int insert_record = 0);
 

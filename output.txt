@@ -1,0 +1,27 @@
+Running main() from gmock_main.cc
+[==========] Running 1 test from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 1 test from BPlusTreeTests
+[ RUN      ] BPlusTreeTests.InsertTest1
+I am here for insert
+Before assignment node 
+created root 1
+Traversing node  1 0 1
+/home/vboxuser/bustub-20221128-2022fall/test/storage/b_plus_tree_insert_test.cpp:52: Failure
+Value of: root_page->IsLeafPage()
+  Actual: false
+Expected: true
+[  FAILED  ] BPlusTreeTests.InsertTest1 (352 ms)
+[ DISABLED ] BPlusTreeTests.DISABLED_InsertTest2
+[ DISABLED ] BPlusTreeTests.DISABLED_InsertTest3
+[----------] 1 test from BPlusTreeTests (353 ms total)
+
+[----------] Global test environment tear-down
+[==========] 1 test from 1 test suite ran. (353 ms total)
+[  PASSED  ] 0 tests.
+[  FAILED  ] 1 test, listed below:
+[  FAILED  ] BPlusTreeTests.InsertTest1
+
+ 1 FAILED TEST
+  YOU HAVE 2 DISABLED TESTS
+
